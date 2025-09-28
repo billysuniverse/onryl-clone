@@ -51,11 +51,30 @@
     --border: 230 14% 20%;
     --input: 230 14% 25%;
     --ring: 265 80% 60%;
-    --chart-1: 265 80% 60%; /* Purple - primary */
-    --chart-2: 200 80% 50%; /* Blue */
-    --chart-3: 130 50% 50%; /* Green */
-    --chart-4: 32 95% 55%;  /* Orange */
-    --chart-5: 0 70% 50%;   /* Red */;
+    --chart-1: 265 80% 60%;
+    --chart-2: 200 80% 50%;
+    --chart-3: 130 50% 50%;
+    --chart-4: 32 95% 55%;
+    --chart-5: 0 70% 50%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  body.crisis-mode {
+    --primary: 0 72% 51%;
+    --accent: 0 84% 95%;
+  }
+
+  body.growth-mode {
+    --primary: 150 94% 33%;
+    --accent: 150 76% 96%;
+  }
+
+  body.consolidation-mode {
+    --primary: 217 91% 60%;
+    --accent: 217 92% 95%;
   }
 }
 
@@ -63,7 +82,66 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
+}
+
+@layer components {
+  .cta {
+    @apply inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    padding: 0.85rem 1.3rem;
+  }
+
+  .cta-primary {
+    background: hsl(var(--primary));
+    color: #fff;
+  }
+
+  .cta-secondary {
+    background: #fff;
+    color: hsl(var(--primary));
+    border: 2px solid hsl(var(--primary));
+  }
+
+  .trust-badges {
+    filter: grayscale(0.2);
+    transition: filter 0.2s ease;
+  }
+
+  .trust-badges:hover {
+    filter: none;
+  }
+
+  .surface-card {
+    @apply rounded-3xl border border-white/10 bg-white/5 backdrop-blur;
+  }
+
+  .section-accent {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(8, 47, 73, 0.9));
+  }
+}
+
+@layer utilities {
+  .bg-grid {
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .text-gradient {
+    background: linear-gradient(120deg, hsl(var(--primary)), #facc15);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .animate-marquee {
+    animation: marquee 28s linear infinite;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
   }
 }
