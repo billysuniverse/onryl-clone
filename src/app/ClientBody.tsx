@@ -7,10 +7,12 @@ export default function ClientBody({
 }: {
   children: React.ReactNode;
 }) {
-  // Remove any extension-added classes during hydration
   useEffect(() => {
-    // This runs only on the client after hydration
-    document.body.className = "antialiased";
+    document.body.classList.add("antialiased");
+
+    return () => {
+      document.body.classList.remove("antialiased");
+    };
   }, []);
 
   return <div className="antialiased">{children}</div>;
