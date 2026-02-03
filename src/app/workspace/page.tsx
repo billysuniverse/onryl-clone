@@ -2,7 +2,9 @@
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Activity,
   BadgeCheck,
@@ -44,6 +46,73 @@ export default function WorkspacePage() {
             Configure your workspace, compliance controls, and integrations.
           </p>
         </div>
+
+        <Card className="p-5">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold">Twilio Connection</h2>
+              <p className="text-sm text-muted-foreground">
+                Connect your Twilio account once and re-use it across every channel.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border px-3 py-1 text-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Connected
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-xs font-medium uppercase text-muted-foreground">
+                Account SID
+              </label>
+              <Input placeholder="ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium uppercase text-muted-foreground">
+                Auth Token
+              </label>
+              <Input placeholder="••••••••••••••••••••••••••••••" type="password" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium uppercase text-muted-foreground">
+                Messaging Service SID (optional)
+              </label>
+              <Input placeholder="MGXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium uppercase text-muted-foreground">
+                Webhook Base URL
+              </label>
+              <Input placeholder="https://app.example.com/webhooks/twilio" />
+            </div>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Button>Save & Verify</Button>
+            <Button variant="outline">Send Test SMS</Button>
+            <p className="text-xs text-muted-foreground">
+              We’ll validate credentials and confirm webhook reachability.
+            </p>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold">Sticky Sender</h2>
+            <p className="text-sm text-muted-foreground">
+              Keep each contact paired with the same sender number for consistent
+              conversations and higher deliverability.
+            </p>
+          </div>
+          <div className="mt-4 flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Enable sticky sender per contact</p>
+              <p className="text-xs text-muted-foreground">
+                New contacts are assigned a sender number on first send.
+              </p>
+            </div>
+            <Checkbox defaultChecked />
+          </div>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {settingsCards.map((card) => {
