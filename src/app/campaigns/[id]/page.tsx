@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,17 +21,19 @@ import {
   Upload,
 } from "lucide-react";
 
-export default function CampaignDetailsPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function CampaignDetailsPage() {
   const [campaign, setCampaign] = useState<CampaignRecord | null>(null);
   const [messageDraft, setMessageDraft] = useState("");
+  const [saveTemplate, setSaveTemplate] = useState(true);
+  const [logTestMessage, setLogTestMessage] = useState(true);
+  const params = useParams<{ id: string }>();
   const router = useRouter();
 
   useEffect(() => {
     const fetchCampaign = async () => {
+      if (!params?.id) {
+        return;
+      }
       const result = await campaignService.getCampaign(params.id);
       if (result.success) {
         setCampaign(result.campaign);
@@ -40,7 +43,7 @@ export default function CampaignDetailsPage({
       }
     };
     fetchCampaign();
-  }, [params.id, router]);
+  }, [params?.id, router]);
 
   const stats = useMemo(() => {
     if (!campaign) {
@@ -142,6 +145,10 @@ export default function CampaignDetailsPage({
 }`}
                   </pre>
                 </div>
+                <div className="rounded-lg border p-4 text-sm text-muted-foreground">
+                  Hook campaigns use a static template. Each inbound webhook payload
+                  merges variables into the template before sending.
+                </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <ShieldCheck className="h-4 w-4 text-emerald-500" />
                   Safe Mode is enabled, outbound sends will be simulated.
@@ -181,6 +188,13 @@ export default function CampaignDetailsPage({
               <Button variant="outline" size="sm" className="w-full">
                 Edit Templates
               </Button>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={saveTemplate}
+                  onCheckedChange={(checked) => setSaveTemplate(Boolean(checked))}
+                />
+                Save edits to this template
+              </label>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-medium uppercase text-muted-foreground">
@@ -204,6 +218,13 @@ export default function CampaignDetailsPage({
                 <Input placeholder="+1 (555) 555-5555" />
                 <Button size="sm">Send test</Button>
               </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={logTestMessage}
+                  onCheckedChange={(checked) => setLogTestMessage(Boolean(checked))}
+                />
+                Log test message to audit + analytics
+              </label>
             </div>
             <Button className="w-full flex items-center gap-2">
               <Copy className="h-4 w-4" />

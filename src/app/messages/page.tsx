@@ -427,6 +427,25 @@ export default function MessagesPage() {
 
             <div className="border-t px-5 py-4">
               <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Auto-response suggestions
+                  </span>
+                  {[
+                    "Happy to help — what’s the best time to connect?",
+                    "Got it. Want me to send pricing details?",
+                    "Thanks! Reply STOP to opt out at any time.",
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      className="rounded-full border px-3 py-1 text-xs text-muted-foreground transition hover:bg-muted"
+                      onClick={() => setComposer(suggestion)}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
                 <Textarea
                   placeholder="Type your message..."
                   value={composer}
