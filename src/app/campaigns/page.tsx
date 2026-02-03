@@ -49,7 +49,7 @@ export default function CampaignsPage() {
       }
       const query = searchQuery.toLowerCase();
       return (
-        campaign.name.toLowerCase().includes(query) ||
+        (campaign.name ?? "").toLowerCase().includes(query) ||
         campaign.type.toLowerCase().includes(query) ||
         campaign.createdBy.toLowerCase().includes(query)
       );
