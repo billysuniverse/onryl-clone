@@ -9,8 +9,9 @@ import {
   ListTodo,
   Users,
   MessageCircle,
+  Sparkles,
+  Search,
   Settings,
-  Layout,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -21,6 +22,8 @@ const links = [
   { name: "Campaigns", href: "/campaigns", icon: MessageCircle },
   { name: "Claims", href: "/claims", icon: ListTodo },
   { name: "Contacts", href: "/contacts", icon: Users },
+  { name: "Subscribers", href: "/subscribers", icon: Sparkles },
+  { name: "Lookups", href: "/lookups", icon: Search },
   { name: "Workspace", href: "/workspace", icon: Settings },
 ];
 

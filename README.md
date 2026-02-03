@@ -67,6 +67,7 @@ Create an `.env.local` file with the following variables:
 # Twilio Credentials
 TWILIO_ACCOUNT_SID=your_account_sid
 TWILIO_AUTH_TOKEN=your_auth_token
+TWILIO_MESSAGING_SERVICE_SID=your_messaging_service_sid
 
 # Base URL for webhooks
 NEXT_PUBLIC_BASE_URL=your_base_url
