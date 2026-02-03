@@ -36,6 +36,21 @@ const settingsCards = [
   { title: "CRM Management", description: "Webhook auth + field mapping.", icon: Database },
 ];
 
+const messagingServices = [
+  {
+    name: "Default Messaging Service for Conversations",
+    sid: "MG68266bf9a248ad8d30d4b36adb752706",
+    inboundRequest: "https://onryl.app/webhooks/twilio/inbound",
+    linkShorteningDomain: "short.onryl.app",
+  },
+  {
+    name: "Customer Care A2P Messaging Service",
+    sid: "MGf0f492f616a93cfd65347426a88f334a",
+    inboundRequest: "https://onryl.app/webhooks/twilio/inbound",
+    linkShorteningDomain: "short.onryl.app",
+  },
+];
+
 export default function WorkspacePage() {
   return (
     <DashboardLayout>
@@ -92,6 +107,55 @@ export default function WorkspacePage() {
             <p className="text-xs text-muted-foreground">
               We’ll validate credentials and confirm webhook reachability.
             </p>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold">Messaging Services</h2>
+              <p className="text-sm text-muted-foreground">
+                Bundle sender numbers and inbound routing into a Twilio Messaging Service.
+              </p>
+            </div>
+            <Button>Create Messaging Service</Button>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <div className="flex flex-1 flex-wrap items-center gap-3">
+              <div className="min-w-[240px] flex-1">
+                <Input placeholder="Search by SID" />
+              </div>
+              <Button variant="outline">Search</Button>
+            </div>
+            <div className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
+              10 per page
+            </div>
+          </div>
+          <div className="mt-5 overflow-hidden rounded-xl border">
+            <div className="grid grid-cols-4 gap-4 border-b bg-muted/30 px-4 py-3 text-xs font-semibold uppercase text-muted-foreground">
+              <span>Name</span>
+              <span>SID</span>
+              <span>Inbound Request Config</span>
+              <span>Link Shortening Domain</span>
+            </div>
+            {messagingServices.map((service) => (
+              <div
+                key={service.sid}
+                className="grid grid-cols-4 gap-4 border-b px-4 py-4 text-sm last:border-b-0"
+              >
+                <div className="space-y-1">
+                  <p className="font-medium text-primary">{service.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Manage senders and opt-out handling.
+                  </p>
+                </div>
+                <span className="font-mono text-xs text-muted-foreground">{service.sid}</span>
+                <span className="text-sm text-muted-foreground">{service.inboundRequest}</span>
+                <span className="text-sm text-muted-foreground">
+                  {service.linkShorteningDomain}
+                </span>
+              </div>
+            ))}
           </div>
         </Card>
 
