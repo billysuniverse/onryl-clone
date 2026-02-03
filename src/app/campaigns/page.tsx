@@ -138,7 +138,9 @@ export default function CampaignsPage() {
                 >
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-medium">{campaign.name}</span>
+                      <span className="font-medium">
+                        {campaign.name ?? "Untitled campaign"}
+                      </span>
                       <span className="text-xs text-muted-foreground">
                         {campaign.id}
                       </span>
