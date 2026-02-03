@@ -1,359 +1,508 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
-} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  MessageSquare, 
-  Send, 
-  Phone, 
-  User, 
-  Users, 
-  Clock,
-  RefreshCw,
-  CheckCircle2
+import {
+  ArrowUpDown,
+  BadgeCheck,
+  Bookmark,
+  CircleDot,
+  Download,
+  MessageSquare,
+  PhoneCall,
+  Search,
+  Send,
+  ShieldCheck,
+  Tag,
+  User,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { sendSMS, sendBulkSMS } from "@/lib/twilio";
 
-interface Message {
+type RepliedStatus = "both" | "replied" | "not_replied";
+
+interface Channel {
   id: string;
-  from: string;
-  to: string;
+  contactName: string;
+  contactNumber: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
+  flags: string[];
+  bookmarked: boolean;
+  replied: boolean;
+  campaign: string;
+}
+
+interface ChatMessage {
+  id: string;
+  channelId: string;
+  direction: "inbound" | "outbound";
   body: string;
-  direction: 'inbound' | 'outbound';
-  status: 'delivered' | 'sent' | 'failed' | 'received';
+  status: "queued" | "sent" | "delivered" | "failed" | "simulated";
   timestamp: string;
 }
 
-// Mock messages data for display
-const mockMessages: Message[] = [
+const channels: Channel[] = [
   {
-    id: '1',
-    from: '+12025550101',
-    to: '+12025550142',
-    body: 'Hi, I\'m interested in learning more about your service',
-    direction: 'inbound',
-    status: 'received',
-    timestamp: '2025-05-23T09:15:00Z',
+    id: "ch_01",
+    contactName: "Jordan Matthews",
+    contactNumber: "+1 (202) 555-0121",
+    lastMessage: "Got it — can we move this to next week?",
+    lastMessageAt: "2m ago",
+    unreadCount: 2,
+    flags: ["VIP", "Renewal"],
+    bookmarked: true,
+    replied: true,
+    campaign: "Renewal Reminder",
   },
   {
-    id: '2',
-    from: '+12025550142',
-    to: '+12025550101',
-    body: 'Thanks for reaching out! We offer SMS marketing automation and campaign management. What specific features are you looking for?',
-    direction: 'outbound',
-    status: 'delivered',
-    timestamp: '2025-05-23T09:20:00Z',
+    id: "ch_02",
+    contactName: "Nina Alvarez",
+    contactNumber: "+1 (415) 555-0184",
+    lastMessage: "STOP",
+    lastMessageAt: "12m ago",
+    unreadCount: 1,
+    flags: ["Stop"],
+    bookmarked: false,
+    replied: true,
+    campaign: "Retarget Q2",
   },
   {
-    id: '3',
-    from: '+12025550102',
-    to: '+12025550142',
-    body: 'When will the new features be available?',
-    direction: 'inbound',
-    status: 'received',
-    timestamp: '2025-05-23T10:05:00Z',
+    id: "ch_03",
+    contactName: "Open Lead",
+    contactNumber: "+1 (646) 555-0166",
+    lastMessage: "Thanks! Can you send pricing?",
+    lastMessageAt: "1h ago",
+    unreadCount: 0,
+    flags: ["Pricing"],
+    bookmarked: false,
+    replied: false,
+    campaign: "Welcome Blast",
   },
   {
-    id: '4',
-    from: '+12025550142',
-    to: '+12025550102',
-    body: 'Our new features will be released next week! You\'ll be able to use advanced segmentation and A/B testing.',
-    direction: 'outbound',
-    status: 'delivered',
-    timestamp: '2025-05-23T10:10:00Z',
+    id: "ch_04",
+    contactName: "Devon Park",
+    contactNumber: "+1 (312) 555-0140",
+    lastMessage: "We’re ready to schedule the demo.",
+    lastMessageAt: "3h ago",
+    unreadCount: 0,
+    flags: ["Demo"],
+    bookmarked: true,
+    replied: true,
+    campaign: "Hook: Demo",
+  },
+];
+
+const chatMessages: ChatMessage[] = [
+  {
+    id: "m1",
+    channelId: "ch_01",
+    direction: "inbound",
+    body: "Hey team, appreciate the follow up.",
+    status: "delivered",
+    timestamp: "Today 9:12 AM",
   },
   {
-    id: '5',
-    from: '+12025550103',
-    to: '+12025550142',
-    body: 'I need help with my account',
-    direction: 'inbound',
-    status: 'received',
-    timestamp: '2025-05-23T11:30:00Z',
+    id: "m2",
+    channelId: "ch_01",
+    direction: "outbound",
+    body: "Absolutely! Want to push your renewal to next week?",
+    status: "delivered",
+    timestamp: "Today 9:14 AM",
+  },
+  {
+    id: "m3",
+    channelId: "ch_01",
+    direction: "inbound",
+    body: "Got it — can we move this to next week?",
+    status: "delivered",
+    timestamp: "Today 9:16 AM",
+  },
+  {
+    id: "m4",
+    channelId: "ch_02",
+    direction: "inbound",
+    body: "STOP",
+    status: "delivered",
+    timestamp: "Today 8:55 AM",
+  },
+  {
+    id: "m5",
+    channelId: "ch_03",
+    direction: "outbound",
+    body: "Welcome! Let me know what you’re looking for.",
+    status: "delivered",
+    timestamp: "Yesterday 4:18 PM",
+  },
+  {
+    id: "m6",
+    channelId: "ch_03",
+    direction: "inbound",
+    body: "Thanks! Can you send pricing?",
+    status: "delivered",
+    timestamp: "Yesterday 4:24 PM",
   },
 ];
 
 export default function MessagesPage() {
-  const [activeConversation, setActiveConversation] = useState<string | null>('+12025550101');
-  const [messageText, setMessageText] = useState('');
-  const [bulkRecipients, setBulkRecipients] = useState('');
-  const [bulkMessage, setBulkMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [isSendingBulk, setIsSendingBulk] = useState(false);
-  const { toast } = useToast();
+  const [selectedChannelId, setSelectedChannelId] = useState(channels[0].id);
+  const [search, setSearch] = useState("");
+  const [campaignFilter, setCampaignFilter] = useState<string>("all");
+  const [flagFilter, setFlagFilter] = useState<string>("all");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
+  const [repliedStatus, setRepliedStatus] = useState<RepliedStatus>("both");
+  const [orderOldest, setOrderOldest] = useState(false);
+  const [safeMode, setSafeMode] = useState(true);
+  const [composer, setComposer] = useState("");
 
-  // Filter messages for the active conversation
-  const conversationMessages = mockMessages.filter(
-    msg => msg.from === activeConversation || msg.to === activeConversation
-  ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const segmentCount = Math.max(1, Math.ceil(composer.length / 160));
 
-  // Get unique contacts from messages
-  const contacts = Array.from(
-    new Set(
-      mockMessages.map(msg => 
-        msg.direction === 'inbound' ? msg.from : msg.to
-      ).filter(number => number !== '+12025550142')
-    )
+  const filteredChannels = useMemo(() => {
+    return channels
+      .filter((channel) => {
+        const matchesSearch =
+          channel.contactName.toLowerCase().includes(search.toLowerCase()) ||
+          channel.contactNumber.toLowerCase().includes(search.toLowerCase()) ||
+          channel.lastMessage.toLowerCase().includes(search.toLowerCase());
+        const matchesCampaign =
+          campaignFilter === "all" || channel.campaign === campaignFilter;
+        const matchesFlag =
+          flagFilter === "all" || channel.flags.includes(flagFilter);
+        const matchesUnread = !unreadOnly || channel.unreadCount > 0;
+        const matchesBookmarked = !bookmarkedOnly || channel.bookmarked;
+        const matchesReplied =
+          repliedStatus === "both" ||
+          (repliedStatus === "replied" && channel.replied) ||
+          (repliedStatus === "not_replied" && !channel.replied);
+        return (
+          matchesSearch &&
+          matchesCampaign &&
+          matchesFlag &&
+          matchesUnread &&
+          matchesBookmarked &&
+          matchesReplied
+        );
+      })
+      .sort((a, b) =>
+        orderOldest
+          ? a.lastMessageAt.localeCompare(b.lastMessageAt)
+          : b.lastMessageAt.localeCompare(a.lastMessageAt)
+      );
+  }, [
+    campaignFilter,
+    flagFilter,
+    bookmarkedOnly,
+    orderOldest,
+    repliedStatus,
+    search,
+    unreadOnly,
+  ]);
+
+  const activeChannel = channels.find(
+    (channel) => channel.id === selectedChannelId
   );
 
-  // Handle sending a single message
-  const handleSendMessage = async () => {
-    if (!messageText.trim() || !activeConversation) return;
-    
-    setIsSending(true);
-    
-    try {
-      // In a real app, this would send through Twilio
-      const result = await sendSMS(activeConversation, messageText);
-      
-      if (result.success) {
-        toast({
-          title: "Message sent",
-          description: "Your message has been sent successfully",
-        });
-        setMessageText('');
-      } else {
-        throw new Error(result.error || 'Failed to send message');
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send message",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  // Handle sending bulk messages
-  const handleSendBulkMessages = async () => {
-    if (!bulkMessage.trim() || !bulkRecipients.trim()) return;
-    
-    const recipients = bulkRecipients.split(',').map(r => r.trim());
-    if (recipients.length === 0) return;
-    
-    setIsSendingBulk(true);
-    
-    try {
-      // In a real app, this would send through Twilio
-      const result = await sendBulkSMS(recipients, bulkMessage);
-      
-      if (result.success) {
-        toast({
-          title: "Bulk messages sent",
-          description: `Successfully sent to ${result.sent}/${recipients.length} recipients`,
-        });
-        setBulkMessage('');
-        setBulkRecipients('');
-      } else {
-        throw new Error(result.error || 'Failed to send bulk messages');
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send bulk messages",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSendingBulk(false);
-    }
-  };
+  const activeMessages = chatMessages.filter(
+    (message) => message.channelId === selectedChannelId
+  );
 
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6">
-        <h1 className="text-3xl font-bold">Messages</h1>
-        
-        <Tabs defaultValue="conversations" className="w-full">
-          <TabsList>
-            <TabsTrigger value="conversations" className="flex items-center">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Conversations
-            </TabsTrigger>
-            <TabsTrigger value="bulk" className="flex items-center">
-              <Users className="mr-2 h-4 w-4" />
-              Bulk Messaging
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="conversations">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {/* Contacts/Conversations List */}
-              <Card className="md:col-span-1">
-                <CardHeader>
-                  <CardTitle>Conversations</CardTitle>
-                  <div className="mt-2">
-                    <Input placeholder="Search contacts..." />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {contacts.map(contact => (
-                      <div 
-                        key={contact}
-                        className={`flex items-center p-3 rounded-md cursor-pointer hover:bg-muted ${
-                          activeConversation === contact ? 'bg-muted' : ''
-                        }`}
-                        onClick={() => setActiveConversation(contact)}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                          <User className="h-4 w-4" />
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm font-medium">{contact}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Last message: {new Date().toLocaleDateString()}
-                          </p>
-                        </div>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Messages</h1>
+            <p className="text-sm text-muted-foreground">
+              Real-time inbox across every workspace channel.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-full border px-3 py-1">
+              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              <span className="text-sm font-medium">Safe Mode</span>
+              <Checkbox
+                checked={safeMode}
+                onCheckedChange={(checked) => setSafeMode(Boolean(checked))}
+              />
+            </div>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_320px]">
+          <Card className="flex flex-col gap-4 p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{filteredChannels.length} channels</span>
+                <span>
+                  {filteredChannels.reduce((acc, channel) => acc + channel.unreadCount, 0)}{" "}
+                  unread
+                </span>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Search by name, number, or text"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid gap-2">
+                <Select value={campaignFilter} onValueChange={setCampaignFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Campaigns" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All campaigns</SelectItem>
+                    <SelectItem value="Renewal Reminder">Renewal Reminder</SelectItem>
+                    <SelectItem value="Retarget Q2">Retarget Q2</SelectItem>
+                    <SelectItem value="Welcome Blast">Welcome Blast</SelectItem>
+                    <SelectItem value="Hook: Demo">Hook: Demo</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={flagFilter} onValueChange={setFlagFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Flags" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All flags</SelectItem>
+                    <SelectItem value="VIP">VIP</SelectItem>
+                    <SelectItem value="Renewal">Renewal</SelectItem>
+                    <SelectItem value="Stop">Stop</SelectItem>
+                    <SelectItem value="Pricing">Pricing</SelectItem>
+                    <SelectItem value="Demo">Demo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={unreadOnly}
+                    onCheckedChange={(checked) => setUnreadOnly(Boolean(checked))}
+                  />
+                  Unread only
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={bookmarkedOnly}
+                    onCheckedChange={(checked) => setBookmarkedOnly(Boolean(checked))}
+                  />
+                  Bookmarked
+                </label>
+              </div>
+
+              <Select
+                value={repliedStatus}
+                onValueChange={(value: RepliedStatus) => setRepliedStatus(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Replied status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="both">Both</SelectItem>
+                  <SelectItem value="replied">Replied</SelectItem>
+                  <SelectItem value="not_replied">Not replied</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => setOrderOldest((prev) => !prev)}
+              >
+                Order by oldest
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {filteredChannels.map((channel) => (
+                <button
+                  key={channel.id}
+                  onClick={() => setSelectedChannelId(channel.id)}
+                  className={`flex w-full flex-col gap-2 rounded-lg border px-3 py-2 text-left transition ${
+                    selectedChannelId === channel.id
+                      ? "border-primary bg-primary/5"
+                      : "border-transparent hover:border-muted"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
+                        <User className="h-4 w-4" />
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Message Thread */}
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                      <User className="h-4 w-4" />
+                      <div>
+                        <p className="text-sm font-medium">{channel.contactName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {channel.contactNumber}
+                        </p>
+                      </div>
                     </div>
-                    <span className="ml-3">{activeConversation || 'Select a conversation'}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col space-y-4 h-[400px] overflow-y-auto mb-4">
-                    {activeConversation ? (
-                      conversationMessages.map(message => (
-                        <div 
-                          key={message.id}
-                          className={`flex ${
-                            message.direction === 'outbound' ? 'justify-end' : 'justify-start'
-                          }`}
-                        >
-                          <div className={`max-w-[70%] p-3 rounded-lg ${
-                            message.direction === 'outbound' 
-                              ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                              : 'bg-muted rounded-tl-none'
-                          }`}>
-                            <p className="text-sm">{message.body}</p>
-                            <div className="flex items-center mt-1">
-                              <Clock className="h-3 w-3 mr-1 opacity-70" />
-                              <p className="text-xs opacity-70">
-                                {new Date(message.timestamp).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                              {message.direction === 'outbound' && (
-                                <div className="flex items-center ml-2">
-                                  <CheckCircle2 className="h-3 w-3 opacity-70" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-muted-foreground">Select a conversation to view messages</p>
-                      </div>
+                    {channel.unreadCount > 0 && (
+                      <Badge className="h-5 rounded-full px-2 text-xs">
+                        {channel.unreadCount}
+                      </Badge>
                     )}
                   </div>
-                  
-                  {activeConversation && (
-                    <div className="flex space-x-2">
-                      <Textarea 
-                        placeholder="Type your message..." 
-                        className="flex-1"
-                        value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
-                        disabled={isSending}
-                      />
-                      <Button 
-                        onClick={handleSendMessage}
-                        disabled={!messageText.trim() || isSending}
-                      >
-                        {isSending ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {channel.lastMessage}
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{channel.lastMessageAt}</span>
+                    <div className="flex items-center gap-2">
+                      {channel.bookmarked && <Bookmark className="h-3 w-3" />}
+                      {channel.flags.length > 0 && <Tag className="h-3 w-3" />}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                </button>
+              ))}
             </div>
-          </TabsContent>
-          
-          <TabsContent value="bulk">
-            <Card>
-              <CardHeader>
-                <CardTitle>Bulk Messaging</CardTitle>
-                <CardDescription>
-                  Send messages to multiple recipients at once
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          </Card>
+
+          <Card className="flex flex-col">
+            <div className="border-b px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                  <PhoneCall className="h-4 w-4" />
+                </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Recipients</label>
-                  <Textarea 
-                    placeholder="Enter phone numbers separated by commas..."
-                    value={bulkRecipients}
-                    onChange={(e) => setBulkRecipients(e.target.value)}
-                    disabled={isSendingBulk}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Format: +12025550101, +12025550102, etc.
+                  <p className="text-sm font-semibold">
+                    {activeChannel ? activeChannel.contactName : "No channel selected"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {activeChannel?.contactNumber ?? "Select a channel on the left"}
                   </p>
                 </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Message</label>
-                  <Textarea 
-                    placeholder="Type your message..."
-                    className="h-32"
-                    value={bulkMessage}
-                    onChange={(e) => setBulkMessage(e.target.value)}
-                    disabled={isSendingBulk}
-                  />
+              </div>
+            </div>
+
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+              {activeChannel ? (
+                activeMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${
+                      message.direction === "outbound" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm ${
+                        message.direction === "outbound"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      }`}
+                    >
+                      <p>{message.body}</p>
+                      <div className="mt-2 flex items-center justify-between text-xs opacity-70">
+                        <span>{message.timestamp}</span>
+                        <span className="flex items-center gap-1">
+                          <CircleDot className="h-3 w-3" />
+                          {message.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Select a channel on the left to begin chatting.
                 </div>
-                
-                <Button 
-                  className="w-full" 
-                  onClick={handleSendBulkMessages}
-                  disabled={!bulkMessage.trim() || !bulkRecipients.trim() || isSendingBulk}
-                >
-                  {isSendingBulk ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Send Bulk Messages
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              )}
+            </div>
+
+            <div className="border-t px-5 py-4">
+              <div className="flex flex-col gap-3">
+                <Textarea
+                  placeholder="Type your message..."
+                  value={composer}
+                  onChange={(event) => setComposer(event.target.value)}
+                  rows={3}
+                />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <MessageSquare className="h-4 w-4" />
+                    {composer.length} chars · {segmentCount} segment
+                    {segmentCount > 1 ? "s" : ""}
+                    {safeMode && (
+                      <span className="flex items-center gap-1 text-emerald-600">
+                        <BadgeCheck className="h-3 w-3" />
+                        Safe Mode
+                      </span>
+                    )}
+                  </div>
+                  <Button className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    Send Message
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="flex flex-col gap-4 p-4">
+            <div>
+              <p className="text-sm font-semibold">Channel Metadata</p>
+              <p className="text-xs text-muted-foreground">
+                {activeChannel ? "Contact details and status" : "Select a channel."}
+              </p>
+            </div>
+
+            {activeChannel ? (
+              <div className="space-y-4 text-sm">
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs uppercase text-muted-foreground">Contact</p>
+                  <p className="font-medium">{activeChannel.contactName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {activeChannel.contactNumber}
+                  </p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs uppercase text-muted-foreground">Tags</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {activeChannel.flags.map((flag) => (
+                      <Badge key={flag} variant="secondary">
+                        {flag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs uppercase text-muted-foreground">Last campaign</p>
+                  <p className="font-medium">{activeChannel.campaign}</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs uppercase text-muted-foreground">Status</p>
+                  <p className="font-medium">
+                    {activeChannel.replied ? "Replied" : "Not replied"}
+                  </p>
+                </div>
+                <div className="space-y-2 rounded-lg border p-3">
+                  <p className="text-xs uppercase text-muted-foreground">Notes</p>
+                  <Textarea placeholder="Add internal notes..." rows={4} />
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border p-4 text-sm text-muted-foreground">
+                Select a channel to see contact metadata, tags, and notes.
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   );

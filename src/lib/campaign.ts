@@ -1,286 +1,182 @@
-// Mock data for campaigns
-const campaigns = [
+export type CampaignType = "Hook" | "Single blast" | "Retarget";
+export type CampaignStatus = "draft" | "scheduled" | "active" | "paused" | "completed";
+
+export interface CampaignStats {
+  sent: number;
+  delivered: number;
+  responded: number;
+  stop: number;
+  spam: number;
+  clicks: number;
+  segments: number;
+}
+
+export interface CampaignRecord {
+  id: string;
+  name: string;
+  type: CampaignType;
+  status: CampaignStatus;
+  createdBy: string;
+  createdAt: string;
+  description: string;
+  templateId?: string;
+  hookEndpoint?: string;
+  message: string;
+  stats: CampaignStats;
+}
+
+const campaigns: CampaignRecord[] = [
   {
-    id: '1',
-    name: 'Welcome Campaign',
-    description: 'Initial outreach to new leads',
-    status: 'active',
-    createdAt: '2025-05-01T12:00:00Z',
-    totalContacts: 156,
-    sentCount: 145,
-    responseCount: 23,
-    tags: ['welcome', 'new-leads'],
-    message: 'Hi {{name}}, welcome to Onryl! Reply INFO to learn more about our services.',
+    id: "c_001",
+    name: "Renewal Reminder",
+    type: "Single blast",
+    status: "active",
+    createdBy: "Avery Hill",
+    createdAt: "2025-05-01T12:00:00Z",
+    description: "Renewal outreach for May accounts.",
+    message:
+      "Hi {name}, your plan renews soon. Reply YES to confirm or STOP to opt out.",
+    stats: {
+      sent: 1245,
+      delivered: 1188,
+      responded: 312,
+      stop: 18,
+      spam: 3,
+      clicks: 212,
+      segments: 1440,
+    },
   },
   {
-    id: '2',
-    name: 'Follow-up Campaign',
-    description: 'Follow up with leads who did not respond',
-    status: 'scheduled',
-    scheduledFor: '2025-05-25T10:00:00Z',
-    createdAt: '2025-05-10T15:30:00Z',
-    totalContacts: 87,
-    sentCount: 0,
-    responseCount: 0,
-    tags: ['follow-up', 'reminder'],
-    message: 'Hi {{name}}, just checking in - are you still interested in our services? Reply YES to learn more.',
+    id: "c_002",
+    name: "Retarget Q2",
+    type: "Retarget",
+    status: "paused",
+    createdBy: "Nina Patel",
+    createdAt: "2025-05-12T09:30:00Z",
+    description: "Retargeted follow-up for unresponsive leads.",
+    message:
+      "Still interested in getting your quote? We can schedule a 15-min call this week.",
+    stats: {
+      sent: 640,
+      delivered: 601,
+      responded: 94,
+      stop: 9,
+      spam: 2,
+      clicks: 54,
+      segments: 720,
+    },
   },
   {
-    id: '3',
-    name: 'Renewal Reminder',
-    description: 'Remind customers about upcoming renewals',
-    status: 'completed',
-    createdAt: '2025-04-15T09:45:00Z',
-    completedAt: '2025-04-20T14:30:00Z',
-    totalContacts: 45,
-    sentCount: 45,
-    responseCount: 28,
-    tags: ['renewal', 'existing-customers'],
-    message: 'Hi {{name}}, your subscription is due for renewal on {{renewal_date}}. Reply RENEW to continue your service.',
+    id: "c_003",
+    name: "Hook: Demo Scheduler",
+    type: "Hook",
+    status: "active",
+    createdBy: "Jordan Lee",
+    createdAt: "2025-05-19T15:05:00Z",
+    description: "Webhook-driven demo scheduling for inbound leads.",
+    templateId: "tpl_demo",
+    hookEndpoint: "/api/hooks/campaigns/c_003",
+    message:
+      "Hey {name}, thanks for requesting a demo. Pick a time here: {link}",
+    stats: {
+      sent: 214,
+      delivered: 206,
+      responded: 88,
+      stop: 2,
+      spam: 0,
+      clicks: 61,
+      segments: 262,
+    },
   },
   {
-    id: '4',
-    name: 'Product Announcement',
-    description: 'Announce new features to existing customers',
-    status: 'draft',
-    createdAt: '2025-05-20T08:15:00Z',
-    totalContacts: 0,
-    sentCount: 0,
-    responseCount: 0,
-    tags: ['announcement', 'product-update'],
-    message: 'Hi {{name}}, we\'ve just released some exciting new features! Check them out at onryl.com/new-features',
+    id: "c_004",
+    name: "Welcome Blast",
+    type: "Single blast",
+    status: "draft",
+    createdBy: "Avery Hill",
+    createdAt: "2025-05-23T10:20:00Z",
+    description: "New subscriber welcome sequence.",
+    message: "Welcome to Onryl! Reply HELP for support or STOP to opt out.",
+    stats: {
+      sent: 0,
+      delivered: 0,
+      responded: 0,
+      stop: 0,
+      spam: 0,
+      clicks: 0,
+      segments: 0,
+    },
   },
 ];
 
-// Function to get all campaigns
 export async function getCampaigns() {
-  // Simulate API request
-  return await new Promise((resolve) => {
+  return await new Promise<{ success: true; campaigns: CampaignRecord[] }>((resolve) => {
     setTimeout(() => {
       resolve({
         success: true,
-        campaigns: campaigns,
+        campaigns,
       });
-    }, 300);
+    }, 200);
   });
 }
 
-// Function to get a specific campaign by ID
 export async function getCampaign(id: string) {
-  // Simulate API request
-  return await new Promise((resolve) => {
+  return await new Promise<
+    | { success: true; campaign: CampaignRecord }
+    | { success: false; error: string }
+  >((resolve) => {
     setTimeout(() => {
-      const campaign = campaigns.find((c) => c.id === id);
-      
+      const campaign = campaigns.find((item) => item.id === id);
       if (campaign) {
-        resolve({
-          success: true,
-          campaign,
-        });
+        resolve({ success: true, campaign });
       } else {
-        resolve({
-          success: false,
-          error: 'Campaign not found',
-        });
+        resolve({ success: false, error: "Campaign not found" });
       }
-    }, 300);
+    }, 200);
   });
 }
 
-// Function to create a new campaign
-export async function createCampaign(campaignData: any) {
-  // Simulate API request
-  return await new Promise((resolve) => {
+export async function createCampaign(
+  campaignData: Pick<CampaignRecord, "name" | "message" | "description" | "type">
+) {
+  return await new Promise<{ success: true; campaign: CampaignRecord }>((resolve) => {
     setTimeout(() => {
-      const newCampaign = {
-        id: String(campaigns.length + 1),
+      const newCampaign: CampaignRecord = {
+        id: `c_${String(campaigns.length + 1).padStart(3, "0")}`,
+        status: "draft",
+        createdBy: "Avery Hill",
         createdAt: new Date().toISOString(),
-        sentCount: 0,
-        responseCount: 0,
-        status: 'draft',
+        stats: {
+          sent: 0,
+          delivered: 0,
+          responded: 0,
+          stop: 0,
+          spam: 0,
+          clicks: 0,
+          segments: 0,
+        },
         ...campaignData,
       };
-      
-      // In a real app, this would be added to the database
-      campaigns.push(newCampaign as any);
-      
-      resolve({
-        success: true,
-        campaign: newCampaign,
-      });
-    }, 300);
+      campaigns.push(newCampaign);
+      resolve({ success: true, campaign: newCampaign });
+    }, 200);
   });
 }
 
-// Function to update an existing campaign
-export async function updateCampaign(id: string, campaignData: any) {
-  // Simulate API request
-  return await new Promise((resolve) => {
-    setTimeout(() => {
-      const campaignIndex = campaigns.findIndex((c) => c.id === id);
-      
-      if (campaignIndex === -1) {
-        resolve({
-          success: false,
-          error: 'Campaign not found',
-        });
-        return;
-      }
-      
-      const updatedCampaign = {
-        ...campaigns[campaignIndex],
-        ...campaignData,
-      };
-      
-      // In a real app, this would update the record in the database
-      campaigns[campaignIndex] = updatedCampaign as any;
-      
-      resolve({
-        success: true,
-        campaign: updatedCampaign,
-      });
-    }, 300);
-  });
-}
-
-// Function to delete a campaign
-export async function deleteCampaign(id: string) {
-  // Simulate API request
-  return await new Promise((resolve) => {
-    setTimeout(() => {
-      const campaignIndex = campaigns.findIndex((c) => c.id === id);
-      
-      if (campaignIndex === -1) {
-        resolve({
-          success: false,
-          error: 'Campaign not found',
-        });
-        return;
-      }
-      
-      // In a real app, this would delete the record from the database
-      const deletedCampaign = campaigns.splice(campaignIndex, 1)[0];
-      
-      resolve({
-        success: true,
-        campaign: deletedCampaign,
-      });
-    }, 300);
-  });
-}
-
-// Function to run a campaign
 export async function runCampaign(id: string) {
-  // Simulate API request
-  return await new Promise((resolve) => {
+  return await new Promise<{ success: boolean; message: string }>((resolve) => {
     setTimeout(() => {
-      const campaign = campaigns.find((c) => c.id === id);
-      
-      if (!campaign) {
-        resolve({
-          success: false,
-          error: 'Campaign not found',
-        });
-        return;
-      }
-      
-      // In a real app, this would trigger the sending of messages
-      // through a job queue or similar mechanism
-      
       resolve({
         success: true,
-        message: `Campaign ${id} is now running`,
+        message: `Campaign ${id} queued for delivery.`,
       });
-    }, 300);
+    }, 200);
   });
 }
 
-// Function to pause a campaign
-export async function pauseCampaign(id: string) {
-  // Simulate API request
-  return await new Promise((resolve) => {
-    setTimeout(() => {
-      const campaignIndex = campaigns.findIndex((c) => c.id === id);
-      
-      if (campaignIndex === -1) {
-        resolve({
-          success: false,
-          error: 'Campaign not found',
-        });
-        return;
-      }
-      
-      const campaign = campaigns[campaignIndex];
-      
-      if (campaign.status !== 'active') {
-        resolve({
-          success: false,
-          error: 'Campaign is not active',
-        });
-        return;
-      }
-      
-      // In a real app, this would pause the sending of messages
-      campaigns[campaignIndex] = {
-        ...campaign,
-        status: 'paused',
-      } as any;
-      
-      resolve({
-        success: true,
-        message: `Campaign ${id} is now paused`,
-      });
-    }, 300);
-  });
-}
-
-// Function to resume a campaign
-export async function resumeCampaign(id: string) {
-  // Simulate API request
-  return await new Promise((resolve) => {
-    setTimeout(() => {
-      const campaignIndex = campaigns.findIndex((c) => c.id === id);
-      
-      if (campaignIndex === -1) {
-        resolve({
-          success: false,
-          error: 'Campaign not found',
-        });
-        return;
-      }
-      
-      const campaign = campaigns[campaignIndex];
-      
-      if (campaign.status !== 'paused') {
-        resolve({
-          success: false,
-          error: 'Campaign is not paused',
-        });
-        return;
-      }
-      
-      // In a real app, this would resume the sending of messages
-      campaigns[campaignIndex] = {
-        ...campaign,
-        status: 'active',
-      } as any;
-      
-      resolve({
-        success: true,
-        message: `Campaign ${id} is now active`,
-      });
-    }, 300);
-  });
-}
-
-// Export all functions
 export const campaignService = {
   getCampaigns,
   getCampaign,
   createCampaign,
-  updateCampaign,
-  deleteCampaign,
   runCampaign,
-  pauseCampaign,
-  resumeCampaign,
 };
